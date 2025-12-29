@@ -6,7 +6,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
+import net.minecraft.world.level.Level;
 import tropical.client.features.waypoint.WaypointManager;
 import tropical.client.features.waypoint.WaypointRender;
 
@@ -26,6 +28,7 @@ public class TropicalClientClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (waypointBind.consumeClick()) {
                 WaypointManager.toggleScreen();
+                WaypointManager.dimensionKeyToString();
             }
         });
 	}

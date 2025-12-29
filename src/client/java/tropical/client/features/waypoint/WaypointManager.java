@@ -12,6 +12,9 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 public class WaypointManager {
     private static final String waypointFileName = "waypoints.wp";
@@ -125,6 +128,21 @@ public class WaypointManager {
         return wp;
     }
 
+    // minecraft.overworld
+    // minecraft.the_nether
+    // minecraft.the_end
+    @Nullable
+    public static String getCurrentDimensionString() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null) { return null; }
+
+        return client.player.level().dimension().identifier().toLanguageKey();
+    }
+
+    public static void dimensionKeyToString() {
+        System.out.println(Minecraft.getInstance().player.level().dimension().identifier().toLanguageKey());
+    }
+
     private static int getWaypointIndex(Waypoint wp) {
         int index = -1;
         for (int i = 0; i < waypoints.size(); i++) {
@@ -155,19 +173,30 @@ public class WaypointManager {
         return worldId;
     }
 
-    public static void addWaypoint(String waypointName, String dimension, float x, float y, float z) {
+    @Nullable
+    public static Waypoint addWaypoint(String waypointName, String dimension, float x, float y, float z) {
         String worldId = getWorldId();
 
-        int id;
-        if (waypoints.size() == 0) {
-            id = 0;
-        } else {
-            id = waypoints.getLast().id + 1;
+        int id = getYoungestId() + 1;
+        Waypoint wp = new Waypoint(waypointName, x, y, z, dimension, id, worldId);
+        waypoints.add(wp);
+
+        try {
+            saveCurrentStateToFile();
+        } catch (Exception e) {
+            return null;
         }
 
-        Waypoint wp = new Waypoint(waypointName, x, y, z, dimension, id, worldId);
+        return wp;
+    }
 
-        waypoints.add(wp);
+    private static int getYoungestId() {
+        int current = 0;
+        for (int i = 0; i < waypoints.size(); i++) {
+            if (waypoints.get(i).id > current) current = waypoints.get(i).id;
+        }
+
+        return current;
     }
 
     private static void saveCurrentStateToFile() throws Exception {
