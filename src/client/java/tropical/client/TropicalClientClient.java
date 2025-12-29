@@ -15,7 +15,7 @@ import tropical.client.features.waypoint.WaypointRender;
 public class TropicalClientClient implements ClientModInitializer {
     KeyMapping waypointBind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.tropical.client.waypoint",
-        GLFW.GLFW_KEY_F13, 
+        GLFW.GLFW_KEY_F8, 
         KeyMapping.Category.MISC
     ));
 

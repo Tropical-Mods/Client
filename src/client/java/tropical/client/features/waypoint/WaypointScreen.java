@@ -11,8 +11,10 @@ import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.FocusableTextWidget;
+import net.minecraft.client.gui.components.PlainTextButton;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.components.FocusableTextWidget.BackgroundFill;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -38,16 +40,16 @@ public class WaypointScreen extends Screen {
         super(Component.nullToEmpty("Waypoints"));
         this.parent = parent;
         this.client = Minecraft.getInstance();
-        this.lay = new HeaderAndFooterLayout(this, 49, 60);
         //this.layout = LinearLayout.vertical().spacing(4);
     }
 
     @Override
     protected void init() {
-        this.l();
+        this.lay = new HeaderAndFooterLayout(this, 49, 60);
+        this.load();
     }
 
-    public void l() {
+    public void load() {
         LinearLayout headerLayout = this.lay.addToHeader(LinearLayout.vertical().spacing(4));
         headerLayout.defaultCellSetting().alignHorizontallyCenter();
         headerLayout.addChild(new StringWidget(this.title, this.font));
@@ -58,6 +60,8 @@ public class WaypointScreen extends Screen {
                                 lay.getFooterHeight(), lay.getHeaderHeight());
 
         this.lay.addToContents(list);
+        this.lay.arrangeElements();
+
         this.makeFooter();
 
         this.lay.visitWidgets( (widget) -> {
@@ -74,12 +78,14 @@ public class WaypointScreen extends Screen {
             Waypoint wp = wps.get(i);
             String line = this.getWaypointBrief(wp);
             Font font = Minecraft.getInstance().font;
-            FocusableTextWidget w = FocusableTextWidget.builder(Component.nullToEmpty(line), font).build();
+            FocusableTextWidget w = FocusableTextWidget.builder(Component.nullToEmpty(line), font)
+                                .backgroundFill(BackgroundFill.ALWAYS).build();
 
             int x = 10;
             int y = w.getHeight() * (i+1);
             w.setX(x);
             w.setY(y);
+            w.setWidth(150);
 
             WaypointButton toggleButton = new WaypointButton(
                 x + w.getWidth(), y, 10, 10,
@@ -111,6 +117,18 @@ public class WaypointScreen extends Screen {
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
+        boolean isFocused = (this.currentFocused != null);
+        this.saveButton.active = isFocused;
+        this.removeButton.active = isFocused;
+        this.copyButton.active = isFocused;
+
+
+        //drawBorder
+        int headerY = this.lay.getHeaderHeight();
+        int footerY = this.height - this.lay.getFooterHeight();
+        int margin = 10;
+        context.renderOutline(0+margin, headerY-margin, this.width-(margin)-5, (footerY-headerY) + margin + 5, 0xFF888888);
+
         for (int i = 0; i < this.entries.size(); i++) {
             var entry = entries.get(i);
 
@@ -139,12 +157,12 @@ public class WaypointScreen extends Screen {
 
 
     private void reloadScreen() {
-        this.clearWidgets();
-        this.l();
+        Minecraft.getInstance().setScreen(new WaypointScreen(null));
     }
 
     EditBox nameBox;
     EditBox xbox, zbox, ybox;
+    Button removeButton, saveButton, copyButton;
     private void makeFooter() {
         LinearLayout infoSide = this.lay.addToFooter(LinearLayout.vertical().spacing(4));
         infoSide.defaultCellSetting().alignHorizontallyCenter();
@@ -169,21 +187,25 @@ public class WaypointScreen extends Screen {
         infoSide.setX(10);
 
         GridLayout buttonGrid = this.lay.addToFooter(new GridLayout(2, 2).rowSpacing(4).columnSpacing(4));
-        buttonGrid.addChild(Button.builder(Component.nullToEmpty("Save Changes"), (btn) -> {
+        saveButton = buttonGrid.addChild(Button.builder(Component.nullToEmpty("Save Changes"), (btn) -> {
             this.updateWaypoint();
         }).size(100, 20).build(), 1, 1);
         
-        buttonGrid.addChild(Button.builder(Component.nullToEmpty("Delete"), (btn) -> {
+        removeButton = buttonGrid.addChild(Button.builder(Component.nullToEmpty("Delete"), (btn) -> {
             this.removeWaypoint();
         }).size(100, 20).build(), 1, 2);
 
-        buttonGrid.addChild(Button.builder(Component.nullToEmpty("Copy"), (btn) -> {
+        copyButton = buttonGrid.addChild(Button.builder(Component.nullToEmpty("Copy"), (btn) -> {
             this.copyWaypoint(); 
         }).size(100, 20).build(), 2, 1);
 
         buttonGrid.addChild(Button.builder(Component.nullToEmpty("New"), (btn) -> {
             this.addWaypoint(); 
         }).size(100, 20).build(), 2, 2);
+
+        //buttonGrid.addChild(new PlainTextButton(0, 0, 100, 20, Component.nullToEmpty("New"), (btn) -> {
+        //    this.addWaypoint();
+        //}, this.client.font), 2, 2);
 
         buttonGrid.arrangeElements();
         buttonGrid.setY(this.height - this.lay.getFooterHeight() + 10);
@@ -281,6 +303,14 @@ public class WaypointScreen extends Screen {
             super(Component.empty());
             this.parent = parent;
             this.client = Minecraft.getInstance();
+
+            name = new EditBox(client.font, 0, 0, 200, 20, Component.empty());
+
+            xbox = new EditBox(client.font, 60, 20, Component.empty());
+            ybox = new EditBox(client.font, 60, 20, Component.empty());
+            zbox = new EditBox(client.font, 60, 20, Component.empty());
+
+            dimension = Utils.makeDimensionWidget(200, 20);
         }
 
         EditBox name;
@@ -290,32 +320,31 @@ public class WaypointScreen extends Screen {
             LinearLayout layout = LinearLayout.vertical().spacing(4);
             layout.defaultCellSetting().alignHorizontallyCenter();
 
-            name = layout.addChild(new EditBox(client.font, 0, 0, 200, 20, Component.empty()));
+            layout.addChild(name);
 
             LinearLayout coords = LinearLayout.horizontal().spacing(4);
             coords.defaultCellSetting().alignHorizontallyCenter();
-
-            xbox = coords.addChild(new EditBox(client.font, 60, 20, Component.empty()));
-            ybox = coords.addChild(new EditBox(client.font, 60, 20, Component.empty()));
-            zbox = coords.addChild(new EditBox(client.font, 60, 20, Component.empty()));
+            
+            coords.addChild(xbox);
+            coords.addChild(ybox);
+            coords.addChild(zbox);
 
             coords.arrangeElements();
             layout.addChild(coords);
 
-            dimension = Utils.makeDimensionWidget(200, 20);
             layout.addChild(dimension);
 
             LinearLayout buttonsLayer = LinearLayout.horizontal().spacing(4);
-            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Done"), (btn) -> {
+            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Save"), (btn) -> {
                 this.addWaypoint();                
             }).size(65, 20).build());
 
-            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Set Defaults"), (btn) -> {
+            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Defaults"), (btn) -> {
                 this.autoFill();
             }).size(65, 20).build());
 
             buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Cancel"), (btn) -> {
-                this.exit();
+                this.onClose();
             }).size(65, 20).build());
 
             layout.addChild(buttonsLayer);
@@ -325,13 +354,6 @@ public class WaypointScreen extends Screen {
             layout.visitWidgets( (widget) -> {
                 this.addRenderableWidget(widget);
             } );
-
-            this.autoFill();
-        }
-
-        private void exit() {
-            this.clearWidgets();
-            client.setScreen(this.parent);
         }
 
         private void addWaypoint() {
@@ -350,7 +372,7 @@ public class WaypointScreen extends Screen {
                 return;
             }
 
-            this.exit();
+            this.onClose();
         }
 
         public void copy(Waypoint wp) {
@@ -360,16 +382,20 @@ public class WaypointScreen extends Screen {
         }
 
         private void autoFill() {
-            Vec3 pos = client.player.getPosition(1.0f);
+            Vec3 pos = new Vec3(client.player.xOld, client.player.yOld, client.player.zOld);
             this.setCoords(pos);
-
             this.dimension.setValue(WaypointManager.getCurrentDimensionString());
         }
 
         private void setCoords(Vec3 pos) {
-            this.xbox.setValue(String.valueOf(pos.x));
-            this.ybox.setValue(String.valueOf(pos.y));
-            this.zbox.setValue(String.valueOf(pos.z));
+            this.xbox.setValue(String.valueOf((float)pos.x));
+            this.xbox.setMessage(Component.nullToEmpty(xbox.getValue()));
+
+            this.ybox.setValue(String.valueOf((float)pos.y));
+            this.ybox.setMessage(Component.nullToEmpty(ybox.getValue()));
+
+            this.zbox.setValue(String.valueOf((float)pos.z));
+            this.zbox.setMessage(Component.nullToEmpty(zbox.getValue()));
         }
 
         @Override

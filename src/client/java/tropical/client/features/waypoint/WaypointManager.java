@@ -70,7 +70,7 @@ public class WaypointManager {
         System.out.println(waypoints.size());
         Screen currentScreen = Minecraft.getInstance().screen;
         if (currentScreen instanceof WaypointScreen) {
-            Minecraft.getInstance().setScreen(((WaypointScreen)currentScreen).parent);
+            Minecraft.getInstance().setScreen(null);
             return;
         }
 
