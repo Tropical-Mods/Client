@@ -3,43 +3,52 @@ package tropical.client.features.waypoint;
 import java.util.ArrayList;
 
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3x2fStack;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.FocusableTextWidget;
-import net.minecraft.client.gui.components.PlainTextButton;
+import net.minecraft.client.gui.components.FocusableTextWidget.BackgroundFill;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.FocusableTextWidget.BackgroundFill;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public class WaypointScreen extends Screen {
-    public record WaypointListEntry(FocusableTextWidget widget, Waypoint wp) {}
+    public record WaypointListEntry(FocusableTextWidget widget, Waypoint wp, Vec2 dir) {}
 
     //private LinearLayout layout;
     private ArrayList<WaypointListEntry> entries;
     private Minecraft client;
     private HeaderAndFooterLayout lay;
+
+    private int guiScale;
+
     private @Nullable Waypoint currentFocused = null;
+
     public Screen parent;
     public WaypointScreen(Screen parent) {
         super(Component.nullToEmpty("Waypoints"));
         this.parent = parent;
         this.client = Minecraft.getInstance();
+        this.guiScale = client.getWindow().getGuiScale();
         //this.layout = LinearLayout.vertical().spacing(4);
     }
 
@@ -59,7 +68,24 @@ public class WaypointScreen extends Screen {
         ScrollableLayout list = this.makeWaypointsList(this.lay.getContentHeight(),
                                 lay.getFooterHeight(), lay.getHeaderHeight());
 
-        this.lay.addToContents(list);
+        GridLayout contentLayout = this.lay.addToContents(new GridLayout(1, 2).columnSpacing(7));
+        contentLayout.defaultCellSetting().alignHorizontallyCenter();
+        contentLayout.addChild(new WaypointMapWidget(0, 0,
+            //this series of subtractions is fucking stupid, all of these values should be globals
+            // 20 = 
+            // 10 = margin for content border times two
+            // 4 = the column spacing for the grid layout
+            this.width-list.getWidth()-20-10-4, this.lay.getContentHeight(),
+            Component.empty(),
+            this.entries
+        ), 1, 2);
+
+        contentLayout.addChild(list, 1, 1);
+
+        contentLayout.arrangeElements();
+
+        //this.lay.addToContents(list);
+
         this.lay.arrangeElements();
 
         this.makeFooter();
@@ -69,8 +95,22 @@ public class WaypointScreen extends Screen {
         } );
     }
 
+    private void makeWaypointMap(int listWidth) {
+    }
+
+    private Vec2 getDir(Waypoint wp) {
+        Vec3 pos = new Vec3(client.player.xOld, client.player.yOld, client.player.zOld);
+        Vec3 wpVec = wp.asVec3();
+
+        Vec3 dirToWp = pos.subtract(wpVec);
+        Vec2 topDownToWp = new Vec2((float)dirToWp.x, (float)dirToWp.z);
+
+        return topDownToWp;
+    }
+
     private ScrollableLayout makeWaypointsList(int contentHeight, int footerHeight, int headerHeight) {
         LinearLayout layout = LinearLayout.vertical().spacing(4);
+        int t = 0;
         this.entries = new ArrayList<>();
         var wps = WaypointManager.getWaypoints();
         for (int i = 0; i < wps.size(); i++) {
@@ -81,14 +121,14 @@ public class WaypointScreen extends Screen {
             FocusableTextWidget w = FocusableTextWidget.builder(Component.nullToEmpty(line), font)
                                 .backgroundFill(BackgroundFill.ALWAYS).build();
 
-            int x = 10;
-            int y = w.getHeight() * (i+1);
-            w.setX(x);
-            w.setY(y);
+            //int x = 10;
+            //int y = w.getHeight() * (i);
+            //w.setX(x);
+            //w.setY(y);
             w.setWidth(150);
 
             WaypointButton toggleButton = new WaypointButton(
-                x + w.getWidth(), y, 10, 10,
+                0, 0, 10, 10,
                 Component.nullToEmpty("nothing"), wp,
                 (waypoint) -> {
                     WaypointManager.toggleWaypoint(waypoint);
@@ -98,15 +138,20 @@ public class WaypointScreen extends Screen {
             row.addChild(w);
             row.addChild(toggleButton);
 
+            row.arrangeElements();
+
             layout.addChild(row);
-            this.entries.add(new WaypointListEntry(w, wp));
+
+            Vec2 dir = getDir(wp);
+            this.entries.add(new WaypointListEntry(w, wp, dir));
         }
 
         layout.arrangeElements();
 
+
         ScrollableLayout scroll = new ScrollableLayout(Minecraft.getInstance(), layout, 10);
         scroll.setMaxHeight(contentHeight);
-        scroll.setMinWidth(this.width - 20);
+        //scroll.setMinWidth(this.width - 20);
         scroll.setX(0);
         scroll.setY(headerHeight);
         scroll.arrangeElements();
@@ -122,12 +167,12 @@ public class WaypointScreen extends Screen {
         this.removeButton.active = isFocused;
         this.copyButton.active = isFocused;
 
-
         //drawBorder
         int headerY = this.lay.getHeaderHeight();
         int footerY = this.height - this.lay.getFooterHeight();
-        int margin = 10;
-        context.renderOutline(0+margin, headerY-margin, this.width-(margin)-5, (footerY-headerY) + margin + 5, 0xFF888888);
+        int widthMargin = 5;
+        int heightMargin = 7; 
+        context.renderOutline(0+widthMargin, headerY-heightMargin, this.width-(widthMargin*2), (footerY-headerY)+(heightMargin*2), 0xFF888888);
 
         for (int i = 0; i < this.entries.size(); i++) {
             var entry = entries.get(i);
@@ -154,7 +199,6 @@ public class WaypointScreen extends Screen {
             }
         }
     }
-
 
     private void reloadScreen() {
         Minecraft.getInstance().setScreen(new WaypointScreen(null));
@@ -202,10 +246,6 @@ public class WaypointScreen extends Screen {
         buttonGrid.addChild(Button.builder(Component.nullToEmpty("New"), (btn) -> {
             this.addWaypoint(); 
         }).size(100, 20).build(), 2, 2);
-
-        //buttonGrid.addChild(new PlainTextButton(0, 0, 100, 20, Component.nullToEmpty("New"), (btn) -> {
-        //    this.addWaypoint();
-        //}, this.client.font), 2, 2);
 
         buttonGrid.arrangeElements();
         buttonGrid.setY(this.height - this.lay.getFooterHeight() + 10);
@@ -433,6 +473,117 @@ public class WaypointScreen extends Screen {
         public void renderContents(GuiGraphics context, int mouseX, int mouseY, float delta) {
             context.fill(this.getX(), this.getY(), this.width + this.getX(), this.height + this.getY(), 0xFFFFFFFF);
             //context.drawString(client.font, "T", this.getX(), this.getY() - (client.font.lineHeight / this.width), 0xFF000000, false);
+        }
+    }
+
+    public class WaypointMapWidget extends AbstractWidget {
+        private ArrayList<WaypointListEntry> entries;
+        private int radius;
+        private int scale;
+
+        private static int blocksRadius = 1000;
+
+        private float[][] circleMesh = new float[360][2];
+
+        public WaypointMapWidget(int i, int j, int k, int l, Component component, ArrayList<WaypointListEntry> wps) {
+            super(i, j, k, l, component);
+            this.entries = wps;
+
+            this.radius = Math.min(this.height, this.width);
+            this.scale = Minecraft.getInstance().getWindow().getGuiScale();
+
+            this.loadCricleMesh();
+        }
+
+        @Override
+        public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+           this.defaultButtonNarrationText(narrationElementOutput);
+        }
+
+        private void loadCricleMesh() {
+            for (int i = 0; i < 360; i++) {
+                double radian = i * (Math.PI/180);
+
+                this.circleMesh[i][0] = (float) ((this.radius/2d) * Math.cos(radian)) + ((this.width/2f));
+                this.circleMesh[i][1] = (float) ((this.radius/2d) * Math.sin(radian)) + ((this.height/2f)); 
+            }
+        }
+
+        private void drawCircle(GuiGraphics context) {
+            for (int i = 1; i < this.circleMesh.length; i++) {
+                this.drawLine2D(context,
+                    circleMesh[i][0] + this.getX(), circleMesh[i][1] + this.getY(),
+                    circleMesh[i-1][0] + this.getX(), circleMesh[i-1][1] + this.getY()
+                );
+            }
+        }
+
+        private void drawWaypointLine(GuiGraphics context, Vec2 dir) {
+            Matrix3x2fStack matrices = context.pose();
+
+            int length = 0;
+            if (dir.length() > WaypointMapWidget.blocksRadius) {
+                length = this.radius;
+            } else {
+                length = (int) ( ( (dir.length()) / (WaypointMapWidget.blocksRadius) ) * this.radius );
+            }
+
+            float x = ((this.width / 2.0f)+this.getX()) * scale;
+            float y = ((this.height / 2.0f)+this.getY()) * scale;
+
+            float radian = (float)Mth.atan2((double)dir.y, (double)dir.x) - (float)Math.PI;
+
+            matrices.pushMatrix();
+
+            matrices.scale(1f / scale);
+            matrices.translate(x, y);
+            matrices.rotate(radian);
+            matrices.translate(-0.5f, -0.5f);
+            context.hLine(0, length, 0, 0xFFFF00FF);
+
+            matrices.popMatrix();
+        }
+
+        private void drawLine2D(GuiGraphics context, float x1, float y1, float x2, float y2) {
+            Matrix3x2fStack matrices = context.pose();
+
+            float x = (x1) * this.scale;
+            float y = (y1) * this.scale;
+            float w = ((x2-x1)) * this.scale;
+            float h = ((y2-y1)) * this.scale;
+
+            float radian = (float)Mth.atan2(h, w);
+            int length = Math.round(Mth.sqrt(w*w + h*h));
+
+            matrices.pushMatrix();
+
+            matrices.scale(1f / scale);
+            matrices.translate(x, y);
+            matrices.rotate(radian);
+            matrices.translate(-0.5f, -0.5f);
+            context.hLine(0, length - 1, 0, 0xFFFF00FF);
+
+            matrices.popMatrix();
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+            for (WaypointListEntry entry : this.entries) {
+                this.drawWaypointLine(context, entry.dir); 
+            }
+
+            this.drawCircle(context);
+            //context.fill(this.getX(), this.getY(), this.width+this.getX(), this.height+this.getY(), 0xFFFF0000);
+        }
+
+        @Override
+        public void playDownSound(SoundManager soundManager) {
+            return;
+        }
+
+        @Override
+        public void onDrag(MouseButtonEvent mouseButtonEvent, double deltaX, double deltaY) {
+            WaypointMapWidget.blocksRadius += (deltaY * 2);
         }
     }
 }
