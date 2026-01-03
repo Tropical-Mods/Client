@@ -3,13 +3,11 @@ package tropical.client.features.waypoint;
 import java.util.ArrayList;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3x2fStack;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
-import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
@@ -17,17 +15,13 @@ import net.minecraft.client.gui.components.FocusableTextWidget;
 import net.minecraft.client.gui.components.FocusableTextWidget.BackgroundFill;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.layouts.FrameLayout;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
@@ -39,8 +33,6 @@ public class WaypointScreen extends Screen {
     private Minecraft client;
     private HeaderAndFooterLayout lay;
 
-    private int guiScale;
-
     private @Nullable Waypoint currentFocused = null;
 
     public Screen parent;
@@ -48,8 +40,6 @@ public class WaypointScreen extends Screen {
         super(Component.nullToEmpty("Waypoints"));
         this.parent = parent;
         this.client = Minecraft.getInstance();
-        this.guiScale = client.getWindow().getGuiScale();
-        //this.layout = LinearLayout.vertical().spacing(4);
     }
 
     @Override
@@ -95,9 +85,6 @@ public class WaypointScreen extends Screen {
         } );
     }
 
-    private void makeWaypointMap(int listWidth) {
-    }
-
     private Vec2 getDir(Waypoint wp) {
         Vec3 pos = new Vec3(client.player.xOld, client.player.yOld, client.player.zOld);
         Vec3 wpVec = wp.asVec3();
@@ -110,7 +97,6 @@ public class WaypointScreen extends Screen {
 
     private ScrollableLayout makeWaypointsList(int contentHeight, int footerHeight, int headerHeight) {
         LinearLayout layout = LinearLayout.vertical().spacing(4);
-        int t = 0;
         this.entries = new ArrayList<>();
         var wps = WaypointManager.getWaypoints();
         for (int i = 0; i < wps.size(); i++) {
@@ -121,10 +107,6 @@ public class WaypointScreen extends Screen {
             FocusableTextWidget w = FocusableTextWidget.builder(Component.nullToEmpty(line), font)
                                 .backgroundFill(BackgroundFill.ALWAYS).build();
 
-            //int x = 10;
-            //int y = w.getHeight() * (i);
-            //w.setX(x);
-            //w.setY(y);
             w.setWidth(150);
 
             WaypointButton toggleButton = new WaypointButton(
@@ -211,15 +193,14 @@ public class WaypointScreen extends Screen {
         LinearLayout infoSide = this.lay.addToFooter(LinearLayout.vertical().spacing(4));
         infoSide.defaultCellSetting().alignHorizontallyCenter();
 
-        LinearLayout coords = LinearLayout.horizontal().spacing(4);
-
         this.nameBox = infoSide.addChild(new EditBox(this.client.font, 0, 0, 100, 20, Component.empty()));
 
+        LinearLayout coords = LinearLayout.horizontal().spacing(4);
         this.xbox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
         this.ybox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
         this.zbox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
 
-        var bt = Utils.makeDimensionWidget();
+        var bt = Utils.makeDimensionWidget(100, 20);
         coords.addChild(bt);
 
         coords.arrangeElements();
@@ -336,114 +317,6 @@ public class WaypointScreen extends Screen {
         }
     }
 
-    public class AddWaypointScreen extends Screen {
-        private Screen parent;
-        private Minecraft client;
-        public AddWaypointScreen(Screen parent) {
-            super(Component.empty());
-            this.parent = parent;
-            this.client = Minecraft.getInstance();
-
-            name = new EditBox(client.font, 0, 0, 200, 20, Component.empty());
-
-            xbox = new EditBox(client.font, 60, 20, Component.empty());
-            ybox = new EditBox(client.font, 60, 20, Component.empty());
-            zbox = new EditBox(client.font, 60, 20, Component.empty());
-
-            dimension = Utils.makeDimensionWidget(200, 20);
-        }
-
-        EditBox name;
-        EditBox xbox, ybox, zbox;
-        CycleButton<String> dimension;
-        public void init() {
-            LinearLayout layout = LinearLayout.vertical().spacing(4);
-            layout.defaultCellSetting().alignHorizontallyCenter();
-
-            layout.addChild(name);
-
-            LinearLayout coords = LinearLayout.horizontal().spacing(4);
-            coords.defaultCellSetting().alignHorizontallyCenter();
-            
-            coords.addChild(xbox);
-            coords.addChild(ybox);
-            coords.addChild(zbox);
-
-            coords.arrangeElements();
-            layout.addChild(coords);
-
-            layout.addChild(dimension);
-
-            LinearLayout buttonsLayer = LinearLayout.horizontal().spacing(4);
-            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Save"), (btn) -> {
-                this.addWaypoint();                
-            }).size(65, 20).build());
-
-            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Defaults"), (btn) -> {
-                this.autoFill();
-            }).size(65, 20).build());
-
-            buttonsLayer.addChild(Button.builder(Component.nullToEmpty("Cancel"), (btn) -> {
-                this.onClose();
-            }).size(65, 20).build());
-
-            layout.addChild(buttonsLayer);
-
-            layout.arrangeElements();
-            FrameLayout.centerInRectangle(layout, 0, 0, this.width, this.height);
-            layout.visitWidgets( (widget) -> {
-                this.addRenderableWidget(widget);
-            } );
-        }
-
-        private void addWaypoint() {
-            float x, y, z;
-            try {
-                x = Float.valueOf(this.xbox.getValue());
-                y = Float.valueOf(this.ybox.getValue());
-                z = Float.valueOf(this.zbox.getValue());
-            } catch (Exception e) {
-                return;
-            }
-
-
-            Waypoint wp = WaypointManager.addWaypoint(name.getValue(), dimension.getValue(), x, y, z);
-            if (wp == null) {
-                return;
-            }
-
-            this.onClose();
-        }
-
-        public void copy(Waypoint wp) {
-            this.setCoords(wp.asVec3());
-            this.dimension.setValue(wp.dimension);
-            this.name.setValue("Copy of - " + wp.name);
-        }
-
-        private void autoFill() {
-            Vec3 pos = new Vec3(client.player.xOld, client.player.yOld, client.player.zOld);
-            this.setCoords(pos);
-            this.dimension.setValue(WaypointManager.getCurrentDimensionString());
-        }
-
-        private void setCoords(Vec3 pos) {
-            this.xbox.setValue(String.valueOf((float)pos.x));
-            this.xbox.setMessage(Component.nullToEmpty(xbox.getValue()));
-
-            this.ybox.setValue(String.valueOf((float)pos.y));
-            this.ybox.setMessage(Component.nullToEmpty(ybox.getValue()));
-
-            this.zbox.setValue(String.valueOf((float)pos.z));
-            this.zbox.setMessage(Component.nullToEmpty(zbox.getValue()));
-        }
-
-        @Override
-        public void onClose() {
-            client.setScreen(this.parent);
-        }
-    }
-
     public class WaypointButton extends AbstractButton {
         Minecraft client;
         public interface WButtonOnPress {
@@ -476,114 +349,4 @@ public class WaypointScreen extends Screen {
         }
     }
 
-    public class WaypointMapWidget extends AbstractWidget {
-        private ArrayList<WaypointListEntry> entries;
-        private int radius;
-        private int scale;
-
-        private static int blocksRadius = 1000;
-
-        private float[][] circleMesh = new float[360][2];
-
-        public WaypointMapWidget(int i, int j, int k, int l, Component component, ArrayList<WaypointListEntry> wps) {
-            super(i, j, k, l, component);
-            this.entries = wps;
-
-            this.radius = Math.min(this.height, this.width);
-            this.scale = Minecraft.getInstance().getWindow().getGuiScale();
-
-            this.loadCricleMesh();
-        }
-
-        @Override
-        public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-           this.defaultButtonNarrationText(narrationElementOutput);
-        }
-
-        private void loadCricleMesh() {
-            for (int i = 0; i < 360; i++) {
-                double radian = i * (Math.PI/180);
-
-                this.circleMesh[i][0] = (float) ((this.radius/2d) * Math.cos(radian)) + ((this.width/2f));
-                this.circleMesh[i][1] = (float) ((this.radius/2d) * Math.sin(radian)) + ((this.height/2f)); 
-            }
-        }
-
-        private void drawCircle(GuiGraphics context) {
-            for (int i = 1; i < this.circleMesh.length; i++) {
-                this.drawLine2D(context,
-                    circleMesh[i][0] + this.getX(), circleMesh[i][1] + this.getY(),
-                    circleMesh[i-1][0] + this.getX(), circleMesh[i-1][1] + this.getY()
-                );
-            }
-        }
-
-        private void drawWaypointLine(GuiGraphics context, Vec2 dir) {
-            Matrix3x2fStack matrices = context.pose();
-
-            int length = 0;
-            if (dir.length() > WaypointMapWidget.blocksRadius) {
-                length = this.radius;
-            } else {
-                length = (int) ( ( (dir.length()) / (WaypointMapWidget.blocksRadius) ) * this.radius );
-            }
-
-            float x = ((this.width / 2.0f)+this.getX()) * scale;
-            float y = ((this.height / 2.0f)+this.getY()) * scale;
-
-            float radian = (float)Mth.atan2((double)dir.y, (double)dir.x) - (float)Math.PI;
-
-            matrices.pushMatrix();
-
-            matrices.scale(1f / scale);
-            matrices.translate(x, y);
-            matrices.rotate(radian);
-            matrices.translate(-0.5f, -0.5f);
-            context.hLine(0, length, 0, 0xFFFF00FF);
-
-            matrices.popMatrix();
-        }
-
-        private void drawLine2D(GuiGraphics context, float x1, float y1, float x2, float y2) {
-            Matrix3x2fStack matrices = context.pose();
-
-            float x = (x1) * this.scale;
-            float y = (y1) * this.scale;
-            float w = ((x2-x1)) * this.scale;
-            float h = ((y2-y1)) * this.scale;
-
-            float radian = (float)Mth.atan2(h, w);
-            int length = Math.round(Mth.sqrt(w*w + h*h));
-
-            matrices.pushMatrix();
-
-            matrices.scale(1f / scale);
-            matrices.translate(x, y);
-            matrices.rotate(radian);
-            matrices.translate(-0.5f, -0.5f);
-            context.hLine(0, length - 1, 0, 0xFFFF00FF);
-
-            matrices.popMatrix();
-        }
-
-        @Override
-        public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
-            for (WaypointListEntry entry : this.entries) {
-                this.drawWaypointLine(context, entry.dir); 
-            }
-
-            this.drawCircle(context);
-            //context.fill(this.getX(), this.getY(), this.width+this.getX(), this.height+this.getY(), 0xFFFF0000);
-        }
-
-        @Override
-        public void playDownSound(SoundManager soundManager) {
-            return;
-        }
-
-        @Override
-        public void onDrag(MouseButtonEvent mouseButtonEvent, double deltaX, double deltaY) {
-            WaypointMapWidget.blocksRadius += (deltaY * 2);
-        }
-    }
 }
