@@ -21,9 +21,12 @@ import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import tropical.client.TropicalUtils;
+import tropical.client.TropicalUtils.Dimension;
 
 public class WaypointScreen extends Screen {
     public record WaypointListEntry(FocusableTextWidget widget, Waypoint wp, Vec2 dir) {}
@@ -189,23 +192,26 @@ public class WaypointScreen extends Screen {
     EditBox nameBox;
     EditBox xbox, zbox, ybox;
     Button removeButton, saveButton, copyButton;
+    DimensionButton dimension;
     private void makeFooter() {
         LinearLayout infoSide = this.lay.addToFooter(LinearLayout.vertical().spacing(4));
         infoSide.defaultCellSetting().alignHorizontallyCenter();
 
-        this.nameBox = infoSide.addChild(new EditBox(this.client.font, 0, 0, 100, 20, Component.empty()));
+        LinearLayout infoTop = LinearLayout.horizontal().spacing(4);
+        this.nameBox = infoTop.addChild(new EditBox(this.client.font, 0, 0, 100, 20, Component.empty()));
+        this.dimension = infoTop.addChild(new DimensionButton(0, 0, 105, 20, Component.empty(), (btn) -> {
+            return;
+        }));
 
         LinearLayout coords = LinearLayout.horizontal().spacing(4);
-        this.xbox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
-        this.ybox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
-        this.zbox = coords.addChild(new EditBox(this.client.font, 0, 0, 35, 20, Component.empty()));
-
-        var bt = Utils.makeDimensionWidget(100, 20);
-        coords.addChild(bt);
+        this.xbox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
+        this.ybox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
+        this.zbox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
 
         coords.arrangeElements();
 
         infoSide.defaultCellSetting().alignHorizontallyCenter();
+        infoSide.addChild(infoTop);
         infoSide.addChild(coords);
         infoSide.arrangeElements();
         infoSide.setY(this.height - this.lay.getFooterHeight() + 10);
@@ -267,6 +273,8 @@ public class WaypointScreen extends Screen {
             return;
         }
 
+        newWp.dimension = this.dimension.getDimension();
+
         boolean changed = (!newWp.name.equals(currentFocused.name)) ||
                           (newWp.x != currentFocused.x) || (newWp.y != currentFocused.y) ||
                           (newWp.z != currentFocused.z);
@@ -288,6 +296,7 @@ public class WaypointScreen extends Screen {
         xbox.setValue(String.valueOf(this.currentFocused.x));
         ybox.setValue(String.valueOf(this.currentFocused.y));
         zbox.setValue(String.valueOf(this.currentFocused.z));
+        dimension.setDimension(this.currentFocused.dimension);
     }
 
 
@@ -301,15 +310,15 @@ public class WaypointScreen extends Screen {
     }
 
     public class Utils {
-        public static CycleButton<String> makeDimensionWidget() {
+        public static CycleButton<TropicalUtils.Dimension> makeDimensionWidget() {
             return makeDimensionWidget(100, 15);
         }
 
-        public static CycleButton<String> makeDimensionWidget(int width, int height) {
-            CycleButton<String> bt = CycleButton.builder((obj) -> {
-                return Component.nullToEmpty(obj);
-            }, "minecraft.overworld")
-            .withValues("minecraft.overworld", "minecraft.the_nether", "minecraft.the_end")
+        public static CycleButton<TropicalUtils.Dimension> makeDimensionWidget(int width, int height) {
+            CycleButton<TropicalUtils.Dimension> bt = CycleButton.builder((obj) -> {
+                return Component.empty();
+            }, TropicalUtils.Dimension.OVERWORLD)
+            .withValues(Dimension.values())
             .displayOnlyValue()
             .create(0, 0, width, height, Component.empty());
 

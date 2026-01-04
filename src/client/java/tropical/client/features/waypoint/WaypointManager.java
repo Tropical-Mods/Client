@@ -12,9 +12,6 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.Level;
 
 public class WaypointManager {
     private static final String waypointFileName = "waypoints.wp";
@@ -128,21 +125,6 @@ public class WaypointManager {
         return wp;
     }
 
-    // minecraft.overworld
-    // minecraft.the_nether
-    // minecraft.the_end
-    @Nullable
-    public static String getCurrentDimensionString() {
-        Minecraft client = Minecraft.getInstance();
-        if (client.player == null) { return null; }
-
-        return client.player.level().dimension().identifier().toLanguageKey();
-    }
-
-    public static void dimensionKeyToString() {
-        System.out.println(Minecraft.getInstance().player.level().dimension().identifier().toLanguageKey());
-    }
-
     private static int getWaypointIndex(Waypoint wp) {
         int index = -1;
         for (int i = 0; i < waypoints.size(); i++) {
@@ -231,7 +213,7 @@ public class WaypointManager {
     }
 
     public static String waypointToRow(Waypoint wp) {
-        return wp.owner + "|" + String.valueOf(wp.id) + "|" + wp.name + "|" + wp.dimension + "|" + 
+        return wp.owner + "|" + String.valueOf(wp.id) + "|" + wp.name + "|" + wp.dimension.toString() + "|" + 
                 String.valueOf(wp.x) + "|" + String.valueOf(wp.y) + "|" + String.valueOf(wp.z) + "|" +
                 String.valueOf(wp.enabled) + "|" + String.valueOf(wp.timestamp) + "\n";
     }

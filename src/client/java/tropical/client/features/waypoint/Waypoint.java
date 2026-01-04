@@ -1,10 +1,15 @@
 package tropical.client.features.waypoint;
 
+import java.time.DayOfWeek;
+
 import net.minecraft.world.phys.Vec3;
+import tropical.client.TropicalUtils;
+import tropical.client.TropicalUtils.Dimension;
 
 public class Waypoint {
     public float x, y, z;
-    public String name, dimension, owner;
+    public String name, owner;
+    public TropicalUtils.Dimension dimension;
     public int id;
     public boolean enabled;
     public long timestamp;
@@ -13,7 +18,7 @@ public class Waypoint {
         this.y = y;
         this.z = z;
         this.name = name;
-        this.dimension = dimension;
+        this.dimension = TropicalUtils.Dimension.getValue(dimension);
         this.owner = owner;
         this.id = id;
         this.enabled = true;
@@ -24,7 +29,16 @@ public class Waypoint {
     public Waypoint(String name, float x, float y, float z, String dimension, int id, String owner,
                     boolean enabled, long timestamp)
     {
+
         this(name, x, y, z, dimension, id, owner);
+        this.enabled = enabled;
+        this.timestamp = timestamp;
+    }
+
+    public Waypoint(String name, float x, float y, float z, Dimension dimension, int id, String owner,
+                    boolean enabled, long timestamp)
+    {
+        this(name, x, y, z, dimension.toString(), id, owner);
         this.enabled = enabled;
         this.timestamp = timestamp;
     }
