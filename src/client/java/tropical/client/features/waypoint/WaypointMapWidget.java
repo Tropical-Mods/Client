@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec2;
 import tropical.client.features.waypoint.WaypointScreen.WaypointListEntry;
 
 public class WaypointMapWidget extends AbstractWidget {
+    private int color = 0xFF888888;
     private ArrayList<WaypointListEntry> entries;
     private int radius;
     private int scale;
@@ -78,7 +79,7 @@ public class WaypointMapWidget extends AbstractWidget {
         matrices.translate(x, y);
         matrices.rotate(radian);
         matrices.translate(-0.5f, -0.5f);
-        context.hLine(0, length, 0, 0xFF888888);
+        context.hLine(0, length, 0, color);
 
         matrices.popMatrix();
     }
@@ -100,7 +101,7 @@ public class WaypointMapWidget extends AbstractWidget {
         matrices.translate(x, y);
         matrices.rotate(radian);
         matrices.translate(-0.5f, -0.5f);
-        context.hLine(0, length - 1, 0, 0xFF888888);
+        context.hLine(0, length - 1, 0, color);
 
         matrices.popMatrix();
     }

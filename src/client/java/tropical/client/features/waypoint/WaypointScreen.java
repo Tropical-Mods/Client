@@ -4,15 +4,19 @@ import java.util.ArrayList;
 
 import org.jetbrains.annotations.Nullable;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.FocusableTextWidget;
 import net.minecraft.client.gui.components.FocusableTextWidget.BackgroundFill;
+import net.minecraft.client.gui.components.PlainTextButton;
 import net.minecraft.client.gui.components.ScrollableLayout;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.layouts.GridLayout;
@@ -27,6 +31,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import tropical.client.TropicalUtils;
 import tropical.client.TropicalUtils.Dimension;
+import tropical.client.features.waypoint.DimensionButton;
 
 public class WaypointScreen extends Screen {
     public record WaypointListEntry(FocusableTextWidget widget, Waypoint wp, Vec2 dir) {}
@@ -62,7 +67,8 @@ public class WaypointScreen extends Screen {
                                 lay.getFooterHeight(), lay.getHeaderHeight());
 
         GridLayout contentLayout = this.lay.addToContents(new GridLayout(1, 2).columnSpacing(7));
-        contentLayout.defaultCellSetting().alignHorizontallyCenter();
+        //contentLayout.defaultCellSetting().alignHorizontallyCenter();
+        contentLayout.defaultCellSetting().alignHorizontallyLeft();
         contentLayout.addChild(new WaypointMapWidget(0, 0,
             //this series of subtractions is fucking stupid, all of these values should be globals
             // 20 = 
@@ -76,8 +82,6 @@ public class WaypointScreen extends Screen {
         contentLayout.addChild(list, 1, 1);
 
         contentLayout.arrangeElements();
-
-        //this.lay.addToContents(list);
 
         this.lay.arrangeElements();
 
@@ -193,6 +197,7 @@ public class WaypointScreen extends Screen {
     EditBox xbox, zbox, ybox;
     Button removeButton, saveButton, copyButton;
     DimensionButton dimension;
+    ColorSelectWidget colorSelect;
     private void makeFooter() {
         LinearLayout infoSide = this.lay.addToFooter(LinearLayout.vertical().spacing(4));
         infoSide.defaultCellSetting().alignHorizontallyCenter();
@@ -207,6 +212,8 @@ public class WaypointScreen extends Screen {
         this.xbox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
         this.ybox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
         this.zbox = coords.addChild(new EditBox(this.client.font, 0, 0, 65, 20, Component.empty()));
+
+        //coords.addChild(new ColorSlider(0, 0, 100, 20, Component.empty(), 0.5));
 
         coords.arrangeElements();
 
@@ -299,7 +306,6 @@ public class WaypointScreen extends Screen {
         dimension.setDimension(this.currentFocused.dimension);
     }
 
-
     @Override
     public void onClose() {
         this.minecraft.setScreen(this.parent);
@@ -358,4 +364,48 @@ public class WaypointScreen extends Screen {
         }
     }
 
+    public class ColorSlider extends AbstractSliderButton {
+        public ColorSlider(int x, int y, int width, int height, Component c, double value) {
+            super(x, y, width, height, c, value);
+        } 
+
+        @Override
+        public void applyValue() {
+
+        }
+
+        @Override
+        public void updateMessage() {
+
+        }
+    }
+
+    public class ColorSelectWidget extends AbstractWidget {
+        //ChatFormatting.values();
+        private boolean showOptions = false;
+        private int initalHeight;
+        private int selectedColor;
+
+        public ColorSelectWidget(int x, int y, int width, int height, Component component) {
+            super(x, y, width, height, component);
+            this.initalHeight = height;
+            this.selectedColor = 0xFF888888;
+        }
+
+        @Override
+        public void onClick(MouseButtonEvent event, boolean bl) {
+            this.setY(this.getY() - 200);
+            this.setHeight(200);
+        }
+
+        @Override
+        public void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+            this.defaultButtonNarrationText(narrationElementOutput);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
+            context.renderOutline(this.getX(), this.getY(), this.width, this.height, 0xFF888888);
+        }
+    }
 }

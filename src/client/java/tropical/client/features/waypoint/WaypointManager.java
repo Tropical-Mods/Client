@@ -58,7 +58,7 @@ public class WaypointManager {
         Random r = new Random();
         for (int i = 0; i < 30; i++) {
             float rc = (float) r.nextInt((100 - 10) + 1) + 10;
-            Waypoint wp = new Waypoint("Debug" + String.valueOf(i), rc, rc, rc, "nether", i, "testing");
+            Waypoint wp = new Waypoint("Debug" + String.valueOf(i), rc, rc, rc, "nether", i, "testing", (0xFF << 24));
             waypoints.add(wp);
         }
     }
@@ -156,11 +156,11 @@ public class WaypointManager {
     }
 
     @Nullable
-    public static Waypoint addWaypoint(String waypointName, String dimension, float x, float y, float z) {
+    public static Waypoint addWaypoint(String waypointName, String dimension, float x, float y, float z, int color) {
         String worldId = getWorldId();
 
         int id = getYoungestId() + 1;
-        Waypoint wp = new Waypoint(waypointName, x, y, z, dimension, id, worldId);
+        Waypoint wp = new Waypoint(waypointName, x, y, z, dimension, id, worldId, color);
         waypoints.add(wp);
 
         try {
@@ -215,7 +215,7 @@ public class WaypointManager {
     public static String waypointToRow(Waypoint wp) {
         return wp.owner + "|" + String.valueOf(wp.id) + "|" + wp.name + "|" + wp.dimension.toString() + "|" + 
                 String.valueOf(wp.x) + "|" + String.valueOf(wp.y) + "|" + String.valueOf(wp.z) + "|" +
-                String.valueOf(wp.enabled) + "|" + String.valueOf(wp.timestamp) + "\n";
+                String.valueOf(wp.enabled) + "|" + String.valueOf(wp.timestamp) +  "|" + String.valueOf(wp.color) + "\n";
     }
 
     @Nullable
@@ -223,7 +223,7 @@ public class WaypointManager {
         String[] parts = row.replaceAll("\n", "").split("\\|");
         System.out.println(parts.length);
 
-        if (parts.length != 9) { return null; }
+        if (parts.length != 10) { return null; }
 
         String owner = parts[0];
         int id = Integer.parseInt(parts[1]);
@@ -234,8 +234,9 @@ public class WaypointManager {
         float z = Float.parseFloat(parts[6]);
         boolean enabled = Boolean.parseBoolean(parts[7]);
         long timestamp = Long.parseLong(parts[8]);
+        int color = Integer.parseUnsignedInt(parts[9]);
 
-        Waypoint wp = new Waypoint(name, x, y, z, dimension, id, owner, enabled, timestamp);
+        Waypoint wp = new Waypoint(name, x, y, z, dimension, id, owner, enabled, timestamp, color);
 
         return wp;
     }

@@ -13,7 +13,8 @@ public class Waypoint {
     public int id;
     public boolean enabled;
     public long timestamp;
-    public Waypoint(String name, float x, float y, float z, String dimension, int id, String owner) {
+    public int color;
+    public Waypoint(String name, float x, float y, float z, String dimension, int id, String owner, int color) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -22,29 +23,30 @@ public class Waypoint {
         this.owner = owner;
         this.id = id;
         this.enabled = true;
+        this.color = color;
 
         this.timestamp = System.currentTimeMillis();
     }
 
     public Waypoint(String name, float x, float y, float z, String dimension, int id, String owner,
-                    boolean enabled, long timestamp)
+                    boolean enabled, long timestamp, int color)
     {
 
-        this(name, x, y, z, dimension, id, owner);
+        this(name, x, y, z, dimension, id, owner, color);
         this.enabled = enabled;
         this.timestamp = timestamp;
     }
 
     public Waypoint(String name, float x, float y, float z, Dimension dimension, int id, String owner,
-                    boolean enabled, long timestamp)
+                    boolean enabled, long timestamp, int color)
     {
-        this(name, x, y, z, dimension.toString(), id, owner);
+        this(name, x, y, z, dimension.toString(), id, owner, color);
         this.enabled = enabled;
         this.timestamp = timestamp;
     }
 
     public Waypoint(Waypoint wp) {
-        this(wp.name, wp.x, wp.y, wp.z, wp.dimension, wp.id, wp.owner, wp.enabled, wp.timestamp);
+        this(wp.name, wp.x, wp.y, wp.z, wp.dimension, wp.id, wp.owner, wp.enabled, wp.timestamp, wp.color);
     }
 
     public Vec3 asVec3() {
