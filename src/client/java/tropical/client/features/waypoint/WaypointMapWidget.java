@@ -12,7 +12,10 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.util.Util;
 import net.minecraft.world.phys.Vec2;
+import tropical.client.Render.Mesh;
+import tropical.client.Render.MeshManager;
 import tropical.client.features.waypoint.WaypointScreen.WaypointListEntry;
 
 public class WaypointMapWidget extends AbstractWidget {
@@ -24,6 +27,7 @@ public class WaypointMapWidget extends AbstractWidget {
     private static int blocksRadius = 1000;
 
     private float[][] circleMesh = new float[361][2];
+    private Mesh defaultMesh;
 
     public WaypointMapWidget(int i, int j, int k, int l, Component component, ArrayList<WaypointListEntry> wps) {
         super(i, j, k, l, component);
@@ -31,7 +35,9 @@ public class WaypointMapWidget extends AbstractWidget {
 
         this.radius = Math.min(this.height, this.width);
         this.scale = Minecraft.getInstance().getWindow().getGuiScale();
+        this.defaultMesh = MeshManager.getDefaultMesh();
 
+        this.defaultMesh.loadScreenPoints(this.radius);
         this.loadCricleMesh();
     }
 
@@ -101,18 +107,22 @@ public class WaypointMapWidget extends AbstractWidget {
         matrices.translate(x, y);
         matrices.rotate(radian);
         matrices.translate(-0.5f, -0.5f);
-        context.hLine(0, length - 1, 0, color);
+        context.hLine(0, length, 0, color);
 
         matrices.popMatrix();
     }
 
     @Override
     public void renderWidget(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        for (WaypointListEntry entry : this.entries) {
-            this.drawWaypointLine(context, entry.dir()); 
-        }
+        //for (WaypointListEntry entry : this.entries) {
+        //    this.drawWaypointLine(context, entry.dir()); 
+        //}
 
-        this.drawCircle(context);
+        //this.drawCircle(context);
+        //
+        double dt = 1d / 60d;
+        this.defaultMesh.renderAndRotate(context, this.scale, this.radius,
+            this.getX() + ((this.width/2) - (this.radius/2)), this.getY(), dt);
     }
 
     @Override
@@ -123,5 +133,11 @@ public class WaypointMapWidget extends AbstractWidget {
     @Override
     public void onDrag(MouseButtonEvent mouseButtonEvent, double deltaX, double deltaY) {
         WaypointMapWidget.blocksRadius += (deltaY * 2);
+    }
+
+    @Override
+    public void onClick(MouseButtonEvent mouseButtonEvent, boolean bl) {
+        MeshManager.cycleMesh();
+        this.defaultMesh = MeshManager.getDefaultMesh();
     }
 }
