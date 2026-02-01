@@ -1,4 +1,4 @@
-package tropical.client.Render;
+package tropical.client.render;
 
 import org.joml.Matrix3x2fStack;
 

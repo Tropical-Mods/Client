@@ -12,12 +12,14 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import tropical.client.TropicalEvents.OnGameJoinCallback;
 
 public class WaypointManager {
     private static final String waypointFileName = "waypoints.wp";
     private static File waypointFile = null;
 
     private static ArrayList<Waypoint> waypoints = new ArrayList<>();
+    private static ArrayList<Waypoint> serverWaypoints = new ArrayList<>();
 
     public static void initalize() {
         waypointFile = new File(waypointFileName);
@@ -51,6 +53,11 @@ public class WaypointManager {
             return;
         }
 
+        OnGameJoinCallback.EVENT.register((packet) -> {
+            String id = getWorldId();
+            loadServerWaypoints(id);
+        });
+
         //addDebugWaypoints();
     }
 
@@ -64,7 +71,6 @@ public class WaypointManager {
     }
 
     public static void toggleScreen() {
-        System.out.println(waypoints.size());
         Screen currentScreen = Minecraft.getInstance().screen;
         if (currentScreen instanceof WaypointScreen) {
             Minecraft.getInstance().setScreen(null);
@@ -137,7 +143,7 @@ public class WaypointManager {
     }
 
     public static ArrayList<Waypoint> getWaypoints() {
-        return new ArrayList<>(waypoints);
+        return new ArrayList<>(serverWaypoints);
     }
 
     public static String getWorldId() {
@@ -191,6 +197,14 @@ public class WaypointManager {
         w.close();
     }
 
+    private static void loadServerWaypoints(String worldId) {
+        serverWaypoints.clear();
+        for (Waypoint wp : waypoints) {
+            if (!wp.owner.equals(worldId)) { continue; }
+            serverWaypoints.add(wp);
+        }
+    }
+
     private static Waypoint updateWaypointFile(Waypoint oldWp, Waypoint newWp) throws Exception {
         BufferedReader read = new BufferedReader(new FileReader(waypointFile));
         StringBuffer fileContents = new StringBuffer();
@@ -221,23 +235,26 @@ public class WaypointManager {
     @Nullable
     private static Waypoint rowToWaypoint(String row) {
         String[] parts = row.replaceAll("\n", "").split("\\|");
-        System.out.println(parts.length);
 
         if (parts.length != 10) { return null; }
 
-        String owner = parts[0];
-        int id = Integer.parseInt(parts[1]);
-        String name = parts[2];
-        String dimension = parts[3];
-        float x = Float.parseFloat(parts[4]);
-        float y = Float.parseFloat(parts[5]);
-        float z = Float.parseFloat(parts[6]);
-        boolean enabled = Boolean.parseBoolean(parts[7]);
-        long timestamp = Long.parseLong(parts[8]);
-        int color = Integer.parseUnsignedInt(parts[9]);
+        try {
+            String owner = parts[0];
+            int id = Integer.parseInt(parts[1]);
+            String name = parts[2];
+            String dimension = parts[3];
+            float x = Float.parseFloat(parts[4]);
+            float y = Float.parseFloat(parts[5]);
+            float z = Float.parseFloat(parts[6]);
+            boolean enabled = Boolean.parseBoolean(parts[7]);
+            long timestamp = Long.parseLong(parts[8]);
+            int color = Integer.parseUnsignedInt(parts[9]);
 
-        Waypoint wp = new Waypoint(name, x, y, z, dimension, id, owner, enabled, timestamp, color);
+            Waypoint wp = new Waypoint(name, x, y, z, dimension, id, owner, enabled, timestamp, color);
 
-        return wp;
+            return wp;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

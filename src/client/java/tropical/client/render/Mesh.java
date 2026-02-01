@@ -1,4 +1,4 @@
-package tropical.client.Render;
+package tropical.client.render;
 
 import java.util.ArrayList;
 

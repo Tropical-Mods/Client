@@ -1,4 +1,4 @@
-package tropical.client.Render;
+package tropical.client.render;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.phys.Vec3;
 
 public class MeshManager {
-    private static String meshLocation = "car.obj";
+    private static String meshLocation = "globe.obj";
     public static void cycleMesh() {
         File f = new File("./");
         File[] files = f.listFiles((dir, name) -> name.endsWith(".obj"));

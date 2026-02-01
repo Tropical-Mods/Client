@@ -14,8 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
 import net.minecraft.world.phys.Vec2;
-import tropical.client.Render.Mesh;
-import tropical.client.Render.MeshManager;
+import tropical.client.render.Mesh;
+import tropical.client.render.MeshManager;
 import tropical.client.features.waypoint.WaypointScreen.WaypointListEntry;
 
 public class WaypointMapWidget extends AbstractWidget {
