@@ -20,7 +20,6 @@ import tropical.client.features.VillagerManager;
 public class NetworkHandlerMixin {
     @Inject(method = "handleLogin(Lnet/minecraft/network/protocol/game/ClientboundLoginPacket;)V", at = @At("TAIL"))
     public void onGameJoin(ClientboundLoginPacket packet, CallbackInfo ci) {
-        RecipeMap
         TropicalEvents.OnGameJoinCallback.EVENT.invoker().interact(packet);
     }
 
