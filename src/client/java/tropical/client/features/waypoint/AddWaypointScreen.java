@@ -13,7 +13,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import tropical.client.TropicalUtils;
-import tropical.client.features.waypoint.WaypointScreen.Utils;
 
 public class AddWaypointScreen extends Screen {
     private Screen parent;

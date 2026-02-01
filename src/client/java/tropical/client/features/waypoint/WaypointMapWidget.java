@@ -37,7 +37,10 @@ public class WaypointMapWidget extends AbstractWidget {
         this.scale = Minecraft.getInstance().getWindow().getGuiScale();
         this.defaultMesh = MeshManager.getDefaultMesh();
 
-        this.defaultMesh.loadScreenPoints(this.radius);
+        //double yz = 0 - (Math.PI/5d);
+        //this.defaultMesh.permRotateYZ(yz);
+
+        //this.defaultMesh.loadScreenPoints(this.radius);
         this.loadCricleMesh();
     }
 

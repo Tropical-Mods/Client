@@ -15,7 +15,6 @@ public class Mesh {
         this.faces = faces;
 
         RenderUtils.zOffset = this.getZOffset();
-        System.out.println(RenderUtils.zOffset);
     }
 
     public void loadScreenPoints(int squareLen) {
@@ -27,7 +26,13 @@ public class Mesh {
         this.screenPoints = sp.toArray(new Vec2[0]);
     }
 
-    public float getZOffset() {
+    public void permRotateYZ(double angle) {
+        for (int i = 0; i < vertices.length; i++) {
+            vertices[i] = RenderUtils.rotateYZ(vertices[i], angle);
+        }
+    }
+
+    private float getZOffset() {
         double currentWorstOffset = 0;
         for (int i = 0; i < vertices.length; i++) {
             Vec3 vertex = vertices[i];
@@ -51,6 +56,10 @@ public class Mesh {
 
                 Vec3 b = RenderUtils.rotateYZ(
                         RenderUtils.rotateXZ(vertices[faces[i][(j + 1)%faces[i].length] - 1], angle), yzAngle);
+
+                //Vec3 a = RenderUtils.rotateXZ(vertices[faces[i][j] - 1], angle);
+
+                //Vec3 b = RenderUtils.rotateXZ(vertices[faces[i][(j + 1)%faces[i].length] - 1], angle);
 
                 Vec2 start = RenderUtils.convertPointToScreen(a, squareLen, x, y);
                 Vec2 end = RenderUtils.convertPointToScreen(b, squareLen, x, y);

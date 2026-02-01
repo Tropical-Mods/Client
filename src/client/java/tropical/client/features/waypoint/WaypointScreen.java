@@ -315,23 +315,6 @@ public class WaypointScreen extends Screen {
         return wp.name + ": " + (int) wp.x + ", " + (int) wp.y + ", " + (int) wp.z;
     }
 
-    public class Utils {
-        public static CycleButton<TropicalUtils.Dimension> makeDimensionWidget() {
-            return makeDimensionWidget(100, 15);
-        }
-
-        public static CycleButton<TropicalUtils.Dimension> makeDimensionWidget(int width, int height) {
-            CycleButton<TropicalUtils.Dimension> bt = CycleButton.builder((obj) -> {
-                return Component.empty();
-            }, TropicalUtils.Dimension.OVERWORLD)
-            .withValues(Dimension.values())
-            .displayOnlyValue()
-            .create(0, 0, width, height, Component.empty());
-
-            return bt;
-        }
-    }
-
     public class WaypointButton extends AbstractButton {
         Minecraft client;
         public interface WButtonOnPress {

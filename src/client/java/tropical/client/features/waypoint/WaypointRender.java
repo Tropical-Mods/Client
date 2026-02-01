@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fStack;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import com.mojang.blaze3d.platform.Window;
 
@@ -18,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 import tropical.client.TropicalClient;
 import tropical.client.TropicalUtils;
+import tropical.client.mixin.client.GameRendererAccessor;
 
 public class WaypointRender {
     public static void initalize() {
@@ -44,16 +48,41 @@ public class WaypointRender {
         int scaledHeight = window.getGuiScaledHeight();
 
         Vec3 wpVec = wp.asVec3().add(0.5, 1, 0.5);
-        Vec3 v = renderer.projectPointToScreen(wpVec);
 
-        if (v.z >= 1d) return;
+        var camera = renderer.getMainCamera();
+
+        //this is a copy of GameRenderer.projectPointToScreen
+        float tickDelta = tick.getGameTimeDeltaPartialTick(true);
+        double fov = ((GameRendererAccessor) renderer).invokeGetFov(camera, tickDelta, true);
+		Matrix4f projectionMatrix = renderer.getProjectionMatrix((float) fov);
+		Quaternionf quaternionf = camera.rotation().conjugate(new Quaternionf());
+		Matrix4f viewMatrix = new Matrix4f().rotation(quaternionf);
+		Matrix4f transformMatrix = projectionMatrix.mul(viewMatrix);
+		Vec3 cameraPos = camera.position();
+		Vec3 eyePlayerPos = wpVec.subtract(cameraPos);
+		Vector3f vector3f = transformMatrix.transformProject(eyePlayerPos.toVector3f());
+		Vec3 ndcPos = new Vec3(vector3f);
+
+        if (ndcPos.z >= 1d) return;
 
         matrices.pushMatrix();
 
-        float x = ((float)v.x * 0.5f + 0.5f) * (float)scaledWidth;
-        float y = (1f - ((float)v.y * 0.5f + 0.5f)) * (float)scaledHeight;
+        float x = ((float)ndcPos.x * 0.5f + 0.5f) * (float)scaledWidth;
+        float y = (1f - ((float)ndcPos.y * 0.5f + 0.5f)) * (float)scaledHeight;
         matrices.translate(x, y);
-        context.drawString(client.font, wp.name, 0, 0, 0xFFFFFFFF, true);
+        float textWidth = client.font.width(wp.name);
+        int textHeight = (int)client.font.lineHeight;
+        int xOffset = (int)(textWidth / 2f);
+        int margin = 2;
+        context.fill(
+            0 - margin - xOffset,
+            0 - margin,
+            xOffset + margin,
+            textHeight + margin,
+            0x44888888
+        );
+
+        context.drawString(client.font, wp.name, 0 - xOffset, 0, 0xFFFFFFFF, true);
 
         matrices.popMatrix();
     }
