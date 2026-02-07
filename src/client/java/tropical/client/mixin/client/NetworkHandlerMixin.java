@@ -11,6 +11,7 @@ import net.minecraft.network.protocol.game.ClientboundLoginPacket;
 import net.minecraft.network.protocol.game.ClientboundMerchantOffersPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.world.entity.animal.equine.Horse;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.RecipeMap;
 import tropical.client.TropicalEvents;

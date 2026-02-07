@@ -11,21 +11,20 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.protocol.game.ServerboundEditBookPacket;
+import net.minecraft.core.Holder;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
-import net.minecraft.network.protocol.game.ServerboundRecipeBookSeenRecipePacket;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.ReloadableServerRegistries.Holder;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerData;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.level.levelgen.DensityFunctions.HolderHolder;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.HitResult.Type;
@@ -51,9 +50,9 @@ public class VillagerManager {
     }
 
     public static void render(GuiGraphics context, DeltaTracker tickCounter) {
-        var font = Minecraft.getInstance().font;
         if (lastId == null) { return; }
 
+        var font = Minecraft.getInstance().font;
         int i = 0;
         for (MerchantOffer offer : offers) {
             int xOffset = 0;
@@ -141,8 +140,9 @@ public class VillagerManager {
             return;
         }
 
-        var profession = ((Villager)entity).getVillagerData().profession();
+        Holder<VillagerProfession> profession = ((Villager)entity).getVillagerData().profession();
         if (profession.is(VillagerProfession.NONE) || profession.is(VillagerProfession.NITWIT)) {
+            lastId = null;
             return;
         }
 

@@ -175,6 +175,8 @@ public class WaypointManager {
             return null;
         }
 
+        loadServerWaypoints(worldId);
+
         return wp;
     }
 
@@ -248,12 +250,13 @@ public class WaypointManager {
             float z = Float.parseFloat(parts[6]);
             boolean enabled = Boolean.parseBoolean(parts[7]);
             long timestamp = Long.parseLong(parts[8]);
-            int color = Integer.parseUnsignedInt(parts[9]);
+            int color = Integer.parseInt(parts[9]);
 
             Waypoint wp = new Waypoint(name, x, y, z, dimension, id, owner, enabled, timestamp, color);
 
             return wp;
         } catch (Exception e) {
+            System.out.println(e);
             return null;
         }
     }

@@ -142,7 +142,11 @@ public class AddWaypointScreen extends Screen {
             return;
         }
 
-        Waypoint wp = WaypointManager.addWaypoint(name.getValue(), dimension.getDimension().toString(), x, y, z, (0xFF<<24));
+        Waypoint wp = WaypointManager.addWaypoint(
+            name.getValue(),
+            dimension.getDimension().toString(),
+            x, y, z,
+            (0xFF<<24));
         if (wp == null) {
             return;
         }
